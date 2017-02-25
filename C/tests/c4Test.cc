@@ -138,58 +138,11 @@ C4Test::C4Test(int testOption)
     c4log_register(kC4LogWarning, log);
     c4log_setLevel(kC4DefaultLog, kC4LogInfo);
 
-    C4DatabaseConfig config = { };
-    config.flags = kC4DB_Create | kC4DB_SharedKeys;
-    config.storageEngine = _storage;
-    config.versioning = _versioning;
-
-    if (_bundled)
-        config.flags |= kC4DB_Bundled;
-
-    if (config.versioning == kC4RevisionTrees) {
-        kRevID = C4STR("1-abcd");
-        kRev2ID = C4STR("2-c001d00d");
-        kRev3ID = C4STR("3-deadbeef");
-    } else {
-        kRevID = C4STR("1@*");
-        kRev2ID = C4STR("2@*");
-        kRev3ID = C4STR("3@*");
-    }
-#if 0
-    if (testOption & 4) {
-        config.encryptionKey.algorithm = kC4EncryptionAES256;
-        memcpy(config.encryptionKey.bytes, "this is not a random key at all.", 32);
-    }
-#endif
-    static C4DatabaseConfig sLastConfig = { };
-    if (config.flags != sLastConfig.flags || config.versioning != sLastConfig.versioning) {
-        fprintf(stderr, "            %s, %s\n",
-                config.storageEngine,
-                (config.versioning==kC4VersionVectors ? "version-vectors" : "rev-trees"));
-        sLastConfig = config;
-    }
-
-    _dbPath = TempDir();
-    if (_bundled)
-        _dbPath += "cbl_core_test";
-    else if (storageType() == kC4SQLiteStorageEngine)
-        _dbPath += "cbl_core_test.sqlite3";
-    else {
-        FAIL("Unknown storage type");
-    }
-
-    C4Error error;
-    if (!c4db_deleteAtPath(databasePath(), &config, &error))
-        REQUIRE(error.code == 0);
-    db = c4db_open(databasePath(), &config, &error);
-    REQUIRE(db != nullptr);
+    openDatabase();
 }
 
-
 C4Test::~C4Test() {
-    C4Error error;
-    c4db_delete(db, &error);
-    c4db_free(db);
+    deleteDatabase();
 
 #if ATOMIC_INT_LOCK_FREE > 1
     if (!current_exception()) {
@@ -316,6 +269,67 @@ unsigned C4Test::importJSONLines(string path, double timeout, bool verbose) {
     return numDocs;
 }
 
+void C4Test::deleteDatabase(){
+    // delete database
+    C4Error error = {};
+    c4db_delete(db, &error);
+    c4db_free(db);
+}
+
+void C4Test::openDatabase(){
+    // open database
+    
+    C4DatabaseConfig config = { };
+    config.flags = kC4DB_Create | kC4DB_SharedKeys;
+    config.storageEngine = _storage;
+    config.versioning = _versioning;
+    
+    if (_bundled)
+        config.flags |= kC4DB_Bundled;
+    
+    if (config.versioning == kC4RevisionTrees) {
+        kRevID = C4STR("1-abcd");
+        kRev2ID = C4STR("2-c001d00d");
+        kRev3ID = C4STR("3-deadbeef");
+    } else {
+        kRevID = C4STR("1@*");
+        kRev2ID = C4STR("2@*");
+        kRev3ID = C4STR("3@*");
+    }
+#if 0
+    if (testOption & 4) {
+        config.encryptionKey.algorithm = kC4EncryptionAES256;
+        memcpy(config.encryptionKey.bytes, "this is not a random key at all.", 32);
+    }
+#endif
+    static C4DatabaseConfig sLastConfig = { };
+    if (config.flags != sLastConfig.flags || config.versioning != sLastConfig.versioning) {
+        fprintf(stderr, "            %s, %s\n",
+                config.storageEngine,
+                (config.versioning==kC4VersionVectors ? "version-vectors" : "rev-trees"));
+        sLastConfig = config;
+    }
+    
+    _dbPath = TempDir();
+    if (_bundled)
+        _dbPath += "cbl_core_test";
+    else if (storageType() == kC4SQLiteStorageEngine)
+        _dbPath += "cbl_core_test.sqlite3";
+    else {
+        FAIL("Unknown storage type");
+    }
+    
+    C4Error error;
+    if (!c4db_deleteAtPath(databasePath(), &config, &error))
+        REQUIRE(error.code == 0);
+    db = c4db_open(databasePath(), &config, &error);
+    REQUIRE(db != nullptr);
+}
+
+void C4Test::eraseTestDB(){
+    deleteDatabase();
+    openDatabase();
+}
 
 const C4Slice C4Test::kDocID = C4STR("mydoc");
 const C4Slice C4Test::kBody  = C4STR("{\"name\":007}");

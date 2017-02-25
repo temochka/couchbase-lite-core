@@ -121,6 +121,10 @@ protected:
     bool readFileByLines(std::string path, std::function<bool(FLSlice)>);
     unsigned importJSONLines(std::string path, double timeout =15.0, bool verbose =false);
     
+    void openDatabase();
+    void deleteDatabase();
+    void eraseTestDB();
+    
     // Some handy constants to use
     static const C4Slice kDocID;    // "mydoc"
     C4Slice kRevID;    // "1-abcdef"
