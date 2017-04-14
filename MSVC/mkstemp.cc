@@ -48,7 +48,7 @@ mkstemp(char *tmpl)
     unsigned int attempts = ATTEMPTS_MIN;
 #endif
 
-    len = strlen(tmpl);
+    len = (int)strlen(tmpl);
     if (len < 6 || strcmp(&tmpl[len - 6], "XXXXXX"))
     {
         errno = EINVAL;
