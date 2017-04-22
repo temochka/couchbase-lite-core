@@ -10,6 +10,10 @@
 #include "Writer.hh"
 #include "civetUtils.hh"
 #include "civetweb.h"
+#include <cstdarg>
+#ifdef _MSC_VER
+#include "asprintf.h"
+#endif
 
 using namespace std;
 using namespace fleece;

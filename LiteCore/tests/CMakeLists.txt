@@ -38,7 +38,7 @@ if(NOT APPLE)
     else()
         set(BIN_TOP "${PROJECT_BINARY_DIR}/../..")
         target_link_libraries(CppTests ${OPENSSL_CRYPTO_LIBRARY} ws2_32 zlibstatic)
-        set(FilesToCopy ${BIN_TOP}/\$\(Configuration\)/sqlite3)
+        set(FilesToCopy ${BIN_TOP}/\$\(Configuration\)/sqlite3 ${BIN_TOP}/Util/\$\(Configuration\)/PlatformUtil)
         add_custom_command(TARGET CppTests POST_BUILD
             COMMAND ${CMAKE_COMMAND}
             -DFilesToCopy="${FilesToCopy}"

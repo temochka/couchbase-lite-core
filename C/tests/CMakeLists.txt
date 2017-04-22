@@ -3,7 +3,7 @@ project (C4Tests)
 
 set(TOP ${PROJECT_SOURCE_DIR}/../../)
 
-add_definitions(-DC4_TESTS)
+add_definitions(-DC4_DYNAMIC_LINKAGE)
 
 include_directories(${TOP}C/include/
                     ${TOP}C/tests/
@@ -26,13 +26,14 @@ set(TEST_SRC ${TEST_SRC}
 
 add_executable(C4Tests ${TEST_SRC} )
 
-target_link_libraries(C4Tests  LiteCore PlatformUtil LiteCoreREST CivetWeb)
+target_link_libraries(C4Tests  LiteCore PlatformUtil LiteCoreREST CivetWeb FleeceStatic)
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/C/tests)
 
 if(MSVC)
     set(BIN_TOP "${PROJECT_BINARY_DIR}/../..")
     set(FilesToCopy ${BIN_TOP}/\$\(Configuration\)/sqlite3
-                    ${BIN_TOP}/\$\(Configuration\)/LiteCore)
+                    ${BIN_TOP}/\$\(Configuration\)/LiteCore
+                    ${BIN_TOP}/Util/\$\(Configuration\)/PlatformUtil)
     add_custom_command(TARGET C4Tests POST_BUILD
         COMMAND ${CMAKE_COMMAND}
         -DFilesToCopy="${FilesToCopy}"

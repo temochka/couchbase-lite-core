@@ -132,7 +132,7 @@ namespace litecore {
         #endif
     }
 
-#ifndef C4_TESTS
+#if !defined(C4_DYNAMIC_LINKAGE)
     string _logSlice(fleece::slice s) {
         stringstream o;
         if (s.buf == nullptr) {

@@ -11,6 +11,10 @@
 #include "c4.h"
 #include "civetweb.h"
 #include <assert.h>
+#include <cstdarg>
+#ifdef _MSC_VER
+#include "asprintf.h"
+#endif
 
 
 #ifndef NDEBUG

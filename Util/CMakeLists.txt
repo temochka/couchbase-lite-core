@@ -22,3 +22,4 @@ endif()
 
 include_directories("include")
 add_library(PlatformUtil        SHARED  ${UTIL_SRC})
+set_target_properties(PlatformUtil PROPERTIES COMPILE_FLAGS "-DPLATFORM_IO_EXPORT")

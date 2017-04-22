@@ -1,5 +1,6 @@
 #include <random>
 #include <cstdint>
+#include "arc4random.h"
 
 std::random_device rd;
 std::default_random_engine e(rd());

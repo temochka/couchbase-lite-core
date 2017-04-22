@@ -17,6 +17,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef INSANE_ASPRINTF_H
 #define INSANE_ASPRINTF_H
 
+#include "Export.h"
 #ifndef __cplusplus
 #include <stdarg.h>
 #else
@@ -27,8 +28,8 @@ extern "C"
 
 #define insane_free(ptr) { free(ptr); ptr = 0; }
 
-int vasprintf(char **strp, const char *fmt, va_list ap);
-int asprintf(char **strp, const char *fmt, ...);
+PLATFORM_DLL int vasprintf(char **strp, const char *fmt, va_list ap);
+PLATFORM_DLL int asprintf(char **strp, const char *fmt, ...);
 
 #ifdef __cplusplus
 }

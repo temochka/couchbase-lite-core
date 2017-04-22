@@ -45,34 +45,38 @@
 #include <fcntl.h>
 #endif
 
+#include "mkstemp.h"
+
 #ifndef HAVE_MKSTEMP
 
-int mkstemp(char *tmp)
-{
-    char		*start, *cp;
-    unsigned	 int tries;
+extern "C" {
+    int mkstemp(char *tmp)
+    {
+        char		*start, *cp;
+        unsigned	 int tries;
 
-    start = strchr(tmp, '\0');
-    while (start > tmp && start[-1] == 'X')
-        start--;
+        start = strchr(tmp, '\0');
+        while (start > tmp && start[-1] == 'X')
+            start--;
 
-    for (tries = INT_MAX; tries; tries--) {
-        if (_mktemp(tmp) == NULL) {
-            errno = EEXIST;
-            return NULL;
+        for (tries = INT_MAX; tries; tries--) {
+            if (_mktemp(tmp) == NULL) {
+                errno = EEXIST;
+                return NULL;
+            }
+            CA2WEX<256> wpath(tmp, CP_UTF8);
+            int fd = _wopen(wpath, O_RDWR | O_CREAT | O_EXCL | O_BINARY, _S_IREAD | _S_IWRITE);
+            if (fd >= 0 || errno != EEXIST) {
+                return fd;
+            }
+
+            for (cp = start; *cp != '\0'; cp++)
+                *cp = 'X';
         }
-        CA2WEX<256> wpath(tmp, CP_UTF8);
-        int fd = _wopen(wpath, O_RDWR | O_CREAT | O_EXCL | O_BINARY, _S_IREAD | _S_IWRITE);
-        if (fd >= 0 || errno != EEXIST) {
-            return fd;
-        }
 
-        for (cp = start; *cp != '\0'; cp++)
-            *cp = 'X';
+        errno = EEXIST;
+        return -1;
     }
-
-    errno = EEXIST;
-    return -1;
 }
 
 #endif

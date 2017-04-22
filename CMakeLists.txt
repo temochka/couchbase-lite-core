@@ -17,7 +17,7 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS
     $<$<CONFIG:Debug>:DEBUG>
 )
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /wd4068 /wd4244 /wd4018 /wd4819 -D_CRT_SECURE_NO_WARNINGS=1")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /wd4068 /wd4244 /wd4018 /wd4819 /wd4800 -D_CRT_SECURE_NO_WARNINGS=1")
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
@@ -55,6 +55,9 @@ include_directories("Util/include"
                     "vendor/sqlite3-unicodesn"
                     "vendor/BLIP-Cpp/include/blip_cpp"
                     "vendor/BLIP-Cpp/src/util")
+if(MSVC)
+    include_directories("MSVC")
+endif()
 
 add_subdirectory(REST)
 
@@ -205,7 +208,7 @@ add_library(LiteCoreREST SHARED LiteCore/Support/Error.cc
                                 LiteCore/Support/Logging.cc
                                 LiteCore/Support/StringUtil.cc)
 target_link_libraries(LiteCoreREST PRIVATE 
-  ${WHOLE_LIBRARY_FLAG} LiteCoreREST_Static ${NO_WHOLE_LIBRARY_FLAG} LiteCore)
+  ${WHOLE_LIBRARY_FLAG} LiteCoreREST_Static ${NO_WHOLE_LIBRARY_FLAG} LiteCore FleeceStatic)
 
 if (APPLE)
     set_target_properties(LiteCoreREST PROPERTIES LINK_FLAGS
@@ -214,6 +217,10 @@ else()
   target_link_libraries(LiteCoreREST PRIVATE ${OPENSSL_CRYPTO_LIBRARY})
   if(ANDROID)
     target_link_libraries(LiteCoreREST PRIVATE log)
+  elseif(MSVC)
+    set_target_properties(LiteCoreREST PROPERTIES LINK_FLAGS
+			  "/def:${PROJECT_SOURCE_DIR}/REST/c4REST.def")
+    set_target_properties(LiteCoreREST PROPERTIES COMPILE_FLAGS "-DC4_DYNAMIC_LINKAGE")
   endif()
 endif()
 
@@ -227,6 +234,9 @@ if(NOT APPLE)
   target_link_libraries(LiteCoreServ PRIVATE ${OPENSSL_CRYPTO_LIBRARY})
   if(ANDROID)
     target_link_libraries(LiteCoreServ PRIVATE log)
+  elseif(MSVC)
+    set_target_properties(LiteCoreServ PROPERTIES LINK_FLAGS
+			  "/ignore:4099")	
   endif()
 endif()
 
