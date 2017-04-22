@@ -48,24 +48,20 @@ endif()
 
 ### SUBMODULES:
 
-include_directories("vendor/fleece/Fleece" 
+include_directories("Util/include"
+                    "vendor/fleece/Fleece" 
                     "vendor/fleece/vendor" 
                     "vendor/SQLiteCpp/include"
                     "vendor/sqlite3-unicodesn"
                     "vendor/BLIP-Cpp/include/blip_cpp"
                     "vendor/BLIP-Cpp/src/util")
 
-if(WIN32)
-  include_directories("MSVC")
-elseif(ANDROID)
-  include_directories("LiteCore/Android")
-endif()
-
 add_subdirectory(REST)
 
 add_subdirectory(vendor/fleece              EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/sqlite3-unicodesn   EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/BLIP-Cpp            EXCLUDE_FROM_ALL)
+add_subdirectory(Util                       EXCLUDE_FROM_ALL)
 
 if(WIN32 OR ANDROID OR LITECORE_BUILD_SQLITE)
     set(SQLITECPP_INTERNAL_SQLITE OFF)
@@ -148,15 +144,6 @@ set(ALL_SRC_FILES
   ${SQLITECPP_SRC}
   ${REPLICATOR_SRC})
 
-if(MSVC)
-	include_directories("vendor/fleece/MSVC")
-	set(ALL_SRC_FILES ${ALL_SRC_FILES} MSVC/asprintf.c
-			     vendor/fleece/MSVC/memmem.cc MSVC/mkstemp.cc MSVC/mkdtemp.cc MSVC/strlcat.c
-			     MSVC/vasprintf-msvc.c MSVC/arc4random.cc)
-elseif(ANDROID)
-  set(ALL_SRC_FILES ${ALL_SRC_FILES} LiteCore/Android/strlcat.c)
-endif()
-
 add_library(LiteCoreStatic STATIC ${ALL_SRC_FILES})
 file(WRITE empty.cpp)
 add_library(LiteCore SHARED empty.cpp)
@@ -168,11 +155,14 @@ endif()
 
 set(LITECORE_LIBRARIES_PRIVATE  ${WHOLE_LIBRARY_FLAG}
                                 LiteCoreStatic
-								FleeceStatic 
+                								FleeceStatic 
                                 SQLite3_UnicodeSN 
                                 BLIPStatic 
                                 ${NO_WHOLE_LIBRARY_FLAG})
 set(LITECORE_LIBRARIES_PUBLIC   sqlite3)
+if(MSVC OR ANDROID)
+  set(LITECORE_LIBRARIES_PUBLIC ${LITECORE_LIBRARIES_PUBLIC} PlatformUtil)
+endif()
 
 target_link_libraries(LiteCore PRIVATE ${LITECORE_LIBRARIES_PRIVATE})
 target_link_libraries(LiteCore PUBLIC  ${LITECORE_LIBRARIES_PUBLIC})
@@ -210,14 +200,21 @@ endif()
 ### REST LISTENER LIBRARY:
 
 add_library(LiteCoreREST SHARED LiteCore/Support/Error.cc
+                                LiteCore/Support/Error_android.cc
                                 LiteCore/Support/FilePath.cc
                                 LiteCore/Support/Logging.cc
                                 LiteCore/Support/StringUtil.cc)
-target_link_libraries(LiteCoreREST PRIVATE LiteCoreREST_Static LiteCore Fleece)
+target_link_libraries(LiteCoreREST PRIVATE 
+  ${WHOLE_LIBRARY_FLAG} LiteCoreREST_Static ${NO_WHOLE_LIBRARY_FLAG} LiteCore)
 
 if (APPLE)
     set_target_properties(LiteCoreREST PROPERTIES LINK_FLAGS
                           "-exported_symbols_list ${PROJECT_SOURCE_DIR}/REST/c4REST.exp")
+else()
+  target_link_libraries(LiteCoreREST PRIVATE ${OPENSSL_CRYPTO_LIBRARY})
+  if(ANDROID)
+    target_link_libraries(LiteCoreREST PRIVATE log)
+  endif()
 endif()
 
 ### LITECORESERV:
@@ -226,6 +223,12 @@ add_executable(LiteCoreServ REST/LiteCoreServ.cc)
 target_link_libraries(LiteCoreServ PRIVATE LiteCoreREST_Static)
 target_link_libraries(LiteCoreServ PRIVATE ${LITECORE_LIBRARIES_PRIVATE})
 target_link_libraries(LiteCoreServ PUBLIC  ${LITECORE_LIBRARIES_PUBLIC})
+if(NOT APPLE)
+  target_link_libraries(LiteCoreServ PRIVATE ${OPENSSL_CRYPTO_LIBRARY})
+  if(ANDROID)
+    target_link_libraries(LiteCoreServ PRIVATE log)
+  endif()
+endif()
 
 ### TESTS:
 

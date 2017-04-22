@@ -61,8 +61,6 @@
 		2728512B1EA46421009CA22F /* Request.hh in Headers */ = {isa = PBXBuildFile; fileRef = 272851281EA46421009CA22F /* Request.hh */; };
 		272851301EA46475009CA22F /* Server.hh in Headers */ = {isa = PBXBuildFile; fileRef = 2728512D1EA46475009CA22F /* Server.hh */; };
 		273407231DEE116600EA5532 /* PlatformIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 273407211DEE116600EA5532 /* PlatformIO.cc */; };
-		273407241DEE116600EA5532 /* PlatformIO.cc in Sources */ = {isa = PBXBuildFile; fileRef = 273407211DEE116600EA5532 /* PlatformIO.cc */; };
-		273407251DEE116600EA5532 /* PlatformIO.hh in Headers */ = {isa = PBXBuildFile; fileRef = 273407221DEE116600EA5532 /* PlatformIO.hh */; };
 		27393A871C8A353A00829C9B /* Error.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27393A861C8A353A00829C9B /* Error.cc */; };
 		27393A881C8A353A00829C9B /* Error.cc in Sources */ = {isa = PBXBuildFile; fileRef = 27393A861C8A353A00829C9B /* Error.cc */; };
 		273E9EC31C506C60003115A6 /* c4DocEnumerator.cc in Sources */ = {isa = PBXBuildFile; fileRef = 273E9EC01C506C60003115A6 /* c4DocEnumerator.cc */; };
@@ -2043,7 +2041,6 @@
 				273E9ED81C506DB4003115A6 /* SecureDigest.hh in Headers */,
 				27D74A921D4D3F3400D806E0 /* Database.h in Headers */,
 				276683B81DC7DD2E00E3F187 /* SequenceTracker.hh in Headers */,
-				273407251DEE116600EA5532 /* PlatformIO.hh in Headers */,
 				27D74A901D4D3F3400D806E0 /* Backup.h in Headers */,
 				27E6DFF21DA5AFF3008EB681 /* Query.hh in Headers */,
 				27D74A8F1D4D3F3400D806E0 /* Assertion.h in Headers */,
@@ -2818,7 +2815,6 @@
 				72DE48131E9C550A00B60952 /* CBLHTTPLogic.m in Sources */,
 				273E9EC31C506C60003115A6 /* c4DocEnumerator.cc in Sources */,
 				2769438D1DCD502A00DB2555 /* c4Observer.cc in Sources */,
-				273407241DEE116600EA5532 /* PlatformIO.cc in Sources */,
 				274D5BAB1DF9CCDE00BDAF9D /* DocumentMeta.cc in Sources */,
 				72DE480F1E9C550A00B60952 /* Checkpoint.cc in Sources */,
 				27F7A0C51D5E657C00447BC6 /* RefCounted.cc in Sources */,
@@ -3319,6 +3315,15 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 273E9FB01C519A1B003115A6 /* LiteCore-dylib.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../Util/include",
+					"$(inherited)",
+					"$(SRCROOT)/../vendor/fleece/Fleece",
+					"$(SRCROOT)/../vendor/SQLiteCpp/include/",
+					"$(SRCROOT)/../vendor/fleece/vendor/",
+					"$(SRCROOT)/../vendor/BLIP-Cpp/include/blip_cpp",
+					"$(SRCROOT)/../vendor/BLIP-Cpp/src/util",
+				);
 			};
 			name = Debug;
 		};
@@ -3326,6 +3331,15 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 27FDF1A21DAD79450087B4E6 /* LiteCore-dylib_Release.xcconfig */;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../Util/include",
+					"$(inherited)",
+					"$(SRCROOT)/../vendor/fleece/Fleece",
+					"$(SRCROOT)/../vendor/SQLiteCpp/include/",
+					"$(SRCROOT)/../vendor/fleece/vendor/",
+					"$(SRCROOT)/../vendor/BLIP-Cpp/include/blip_cpp",
+					"$(SRCROOT)/../vendor/BLIP-Cpp/src/util",
+				);
 			};
 			name = Release;
 		};
@@ -3456,6 +3470,7 @@
 				27FC81F21EAAB0D90028E38E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		720EA3F21BA7EAD9002B8416 /* Build configuration list for PBXNativeTarget "LiteCore dylib" */ = {
 			isa = XCConfigurationList;

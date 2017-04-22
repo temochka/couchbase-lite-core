@@ -16,11 +16,6 @@ include_directories(${TOP}LiteCore/BlobStore/ ${TOP}LiteCore/Indexes/ ${TOP}Lite
                 )
                     
 aux_source_directory(.  TEST_SRC)
-if(MSVC)
-	set(TEST_SRC ${TEST_SRC} ../../MSVC/arc4random.cc)
-elseif(ANDROID)
-  set(TEST_SRC ${TEST_SRC} ../Android/arc4random.cc)
-endif()
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/LiteCore/tests)
 file(COPY ../../C/tests/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/C/tests)
@@ -30,6 +25,7 @@ add_executable(CppTests ${TEST_SRC} ../../Replicator/tests/ReplicatorLoopbackTes
 target_link_libraries(CppTests  LiteCoreStatic
                                 FleeceStatic
                                 sqlite3
+                                PlatformUtil
                                 SQLite3_UnicodeSN
                                 BLIPStatic)
 
