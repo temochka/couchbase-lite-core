@@ -19,13 +19,17 @@
 #include "cbliteTool.hh"
 
 
+const Tool::FlagSpec CBLiteTool::kRevsFlags[] = {
+    {"--remotes",   (FlagHandler)&CBLiteTool::remotesFlag},
+};
+
 void CBLiteTool::revsUsage() {
     writeUsageCommand("revs", false, "DOCID");
     cerr <<
     "  Shows a document's revision history\n"
     "    --remotes : Shows which revisions are known current on remote databases\n"
     "  Revision flags are denoted by dashes or the letters:\n"
-    "    [D]eleted  [X]Closed  [C]onflict  [A]ttachments  [K]eep body  [L]eaf"
+    "    [D]eleted  [X]Closed  [C]onflict  [A]ttachments  [K]eep body  [L]eaf\n"
     ;
 }
 
@@ -70,10 +74,10 @@ void CBLiteTool::revsInfo() {
     alloc_slice root; // use empty slice as root of tree
 
     do {
-        alloc_slice leafRevID = doc->selectedRev.revID;
+        alloc_slice leafRevID(doc->selectedRev.revID);
         alloc_slice childID = leafRevID;
         while (c4doc_selectParentRevision(doc)) {
-            alloc_slice parentID = doc->selectedRev.revID;
+            alloc_slice parentID(doc->selectedRev.revID);
             tree[parentID].insert(childID);
             childID = parentID;
         }

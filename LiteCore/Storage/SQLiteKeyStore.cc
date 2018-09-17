@@ -23,11 +23,12 @@
 #include "Error.hh"
 #include "StringUtil.hh"
 #include "SQLiteCpp/SQLiteCpp.h"
-#include "Fleece.hh"
+#include "FleeceImpl.hh"
 #include <sstream>
 
 using namespace std;
 using namespace fleece;
+using namespace fleece::impl;
 
 namespace litecore {
 
@@ -327,11 +328,12 @@ namespace litecore {
     void SQLiteKeyStore::createTrigger(const string &triggerName,
                                        const char *triggerSuffix,
                                        const char *operation,
+                                       const char *when,
                                        const string &statements)
     {
-        db().exec(CONCAT("CREATE TRIGGER \"" << triggerName << "::" << triggerSuffix
-                            << "\" AFTER " << operation << " ON kv_" << name()
-                            << " BEGIN " << statements << "; END"));
+        db().exec(CONCAT("CREATE TRIGGER \"" << triggerName << "::" << triggerSuffix  << "\" "
+                         << operation << " ON kv_" << name() << ' ' << when << ' '
+                         << " BEGIN " << statements << "; END"));
     }
 
 

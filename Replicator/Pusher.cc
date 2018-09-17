@@ -29,15 +29,14 @@
 
 using namespace std;
 using namespace fleece;
-using namespace fleeceapi;
 
 namespace litecore { namespace repl {
 
-    Pusher::Pusher(Connection *connection, Replicator *replicator, DBWorker *dbActor, Options options)
-    :Worker(connection, replicator, options, "Push")
+    Pusher::Pusher(Replicator *replicator, DBWorker *dbActor)
+    :Worker(replicator, "Push")
     ,_dbWorker(dbActor)
-    ,_continuous(options.push == kC4Continuous)
-    ,_skipDeleted(options.skipDeleted())
+    ,_continuous(_options.push == kC4Continuous)
+    ,_skipDeleted(_options.skipDeleted())
     {
         if (passive()) {
             // Passive replicator always sends "changes"
@@ -52,7 +51,7 @@ namespace litecore { namespace repl {
             _proposeChanges = true;
             _proposeChangesKnown = true;
         }
-        filterByDocIDs(options.docIDs());
+        filterByDocIDs(_options.docIDs());
         registerHandler("subChanges",      &Pusher::handleSubChanges);
         registerHandler("getAttachment",   &Pusher::handleGetAttachment);
         registerHandler("proveAttachment", &Pusher::handleProveAttachment);
@@ -89,8 +88,7 @@ namespace litecore { namespace repl {
     void Pusher::handleSubChanges(Retained<MessageIn> req) {
         if (!passive()) {
             warn("Ignoring 'subChanges' request from peer; I'm already pushing");
-            req->respondWithError({"LiteCore"_sl, kC4ErrorConflict,
-                                   "I'm already pushing"_sl});     //TODO: Proper error code
+            req->respondWithError({"LiteCore"_sl, 501, "Not implemented."_sl});
             return;
         }
         auto since = max(req->intProperty("since"_sl), 0l);

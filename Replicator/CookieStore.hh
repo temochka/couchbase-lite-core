@@ -18,7 +18,7 @@
 
 #pragma once
 #include "RefCounted.hh"
-#include "FleeceCpp.hh"
+#include "fleece/Fleece.hh"
 #include "c4Replicator.h" // for C4Address
 #include <iostream>
 #include <memory>
@@ -27,6 +27,8 @@
 #include <vector>
 
 namespace litecore { namespace repl {
+    using fleece::RefCounted;
+    using fleece::Retained;
 
     /** Represents an HTTP cookie. */
     struct Cookie {
@@ -35,7 +37,7 @@ namespace litecore { namespace repl {
 
         Cookie() =default;
         Cookie(const std::string &header, const std::string &fromHost, const std::string &fromPath);
-        Cookie(fleeceapi::Dict);
+        Cookie(fleece::Dict);
 
         explicit operator bool() const  {return valid();}
         bool valid() const              {return !name.empty();}
@@ -56,7 +58,7 @@ namespace litecore { namespace repl {
     };
 
     std::ostream& operator<< (std::ostream&, const Cookie&);
-    fleeceapi::Encoder& operator<< (fleeceapi::Encoder&, const Cookie&);
+    fleece::Encoder& operator<< (fleece::Encoder&, const Cookie&);
 
 
     /** Stores cookies, with support for persistent storage.

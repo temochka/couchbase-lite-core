@@ -304,7 +304,11 @@ namespace litecore {
 
         if(tmpDir == nullptr) {
 #ifdef _MSC_VER
-            tmpDir = "C:\\tmp";
+            WCHAR pathBuffer[MAX_PATH + 1];
+            GetTempPathW(MAX_PATH, pathBuffer);
+            GetLongPathNameW(pathBuffer, pathBuffer, MAX_PATH);
+            CW2AEX<256> convertedPath(pathBuffer, CP_UTF8);
+            return FilePath(convertedPath.m_psz, "");
 #else
             tmpDir = "/tmp";
 #endif
@@ -425,6 +429,17 @@ namespace litecore {
         }
         return s.st_size;
     }
+
+    time_t FilePath::lastModified() const {
+        struct stat s;
+        if (stat_u8(path().c_str(), &s) != 0) {
+            if (errno == ENOENT)
+                return -1;
+            error::_throwErrno();
+        }
+        return s.st_mtime;
+    }
+
 
     bool FilePath::exists() const {
         struct stat s;

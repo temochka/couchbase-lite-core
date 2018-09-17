@@ -21,7 +21,7 @@
 #include "Worker.hh"
 #include "Batcher.hh"
 #include "c4BlobStore.h"
-#include "FleeceCpp.hh"
+#include "fleece/Fleece.hh"
 #include "function_ref.hh"
 #include <string>
 #include <unordered_set>
@@ -35,11 +35,10 @@ namespace litecore { namespace repl {
     /** Actor that manages database access for the replicator. */
     class DBWorker : public Worker {
     public:
-        DBWorker(blip::Connection *connection,
-                Replicator*,
-                C4Database *db,
-                const fleece::alloc_slice &remoteURL,
-                Options options);
+
+        DBWorker(Replicator*,
+                 C4Database *db,
+                 const fleece::alloc_slice &remoteURL);
 
         /** The blob store is thread-safe so it can be accessed directly. */
         C4BlobStore* blobStore() const                  {return _blobStore;}
@@ -90,13 +89,11 @@ namespace litecore { namespace repl {
         }
 
         using FindBlobCallback = function_ref<void(FLDeepIterator,
-                                                   fleeceapi::Dict blob,
+                                                   fleece::Dict blob,
                                                    const C4BlobKey &key)>;
 
         /** Finds blob/attachment references anywhere in a document. */
-        void findBlobReferences(fleeceapi::Dict root,
-                                FLSharedKeys sk,
-                                const FindBlobCallback&);
+        void findBlobReferences(fleece::Dict root, const FindBlobCallback&);
 
         bool disableBlobSupport() const     {return _disableBlobSupport;}
 
@@ -109,11 +106,14 @@ namespace litecore { namespace repl {
         void handleSetCheckpoint(Retained<blip::MessageIn>);
         void _checkpointIsInvalid();
         bool getPeerCheckpointDoc(blip::MessageIn* request, bool getting,
-                                  fleece::slice &checkpointID, c4::ref<C4RawDocument> &doc);
+                                  fleece::slice &checkpointID, c4::ref<C4RawDocument> &doc) const;
 
         slice effectiveRemoteCheckpointDocID(C4Error*);
+        std::string effectiveRemoteCheckpointDocID(const C4UUID*, C4Error*);
         void _getCheckpoint(CheckpointCallback);
         void _setCheckpoint(alloc_slice data, std::function<void()> onComplete);
+        std::string _getOldCheckpoint(C4Error*);
+        alloc_slice _checkpointFromID(const slice &, C4Error*);
         void _getChanges(GetChangesParams, Retained<Pusher> pusher);
         bool addChangeToList(const C4DocumentInfo &info, C4Document *doc,
                              std::shared_ptr<RevToSendList> &changes);
@@ -121,7 +121,6 @@ namespace litecore { namespace repl {
                                 std::function<void(std::vector<bool>)> callback);
         void _sendRevision(Retained<RevToSend> request,
                            blip::MessageProgressCallback onProgress);
-        void _insertRevision(RevToInsert *rev);
         void _setCookie(alloc_slice setCookieHeader);
 
         void _markRevsSyncedNow();
@@ -129,13 +128,11 @@ namespace litecore { namespace repl {
         void _connectionClosed() override;
 
         void dbChanged();
-        void _markRevSynced(Rev);
 
-        fleeceapi::Dict getRevToSend(C4Document*, const RevToSend&, C4Error *outError);
+        fleece::Dict getRevToSend(C4Document*, const RevToSend&, C4Error *outError);
         static std::string revHistoryString(C4Document*, const RevToSend&);
-        void writeRevWithLegacyAttachments(fleeceapi::Encoder&,
-                                           fleeceapi::Dict rev,
-                                           FLSharedKeys sk,
+        void writeRevWithLegacyAttachments(fleece::Encoder&,
+                                           fleece::Dict rev,
                                            unsigned revpos);
         bool findAncestors(slice docID, slice revID,
                            std::vector<alloc_slice> &ancestors);

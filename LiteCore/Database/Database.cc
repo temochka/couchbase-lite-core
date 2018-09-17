@@ -24,17 +24,22 @@
 #include "DataFile.hh"
 #include "Record.hh"
 #include "SequenceTracker.hh"
-#include "Fleece.hh"
+#include "FleeceImpl.hh"
 #include "BlobStore.hh"
 #include "Upgrader.hh"
-#include "forestdb_endian.h"
 #include "SecureRandomize.hh"
 #include "make_unique.h"
 
+namespace litecore { namespace constants
+{
+    const C4Slice kLocalCheckpointStore = C4STR("checkpoints");
+    const C4Slice kPreviousPrivateUUIDKey = C4STR("previousPrivateUUID");
+}}
 
 namespace c4Internal {
     using namespace litecore;
     using namespace fleece;
+    using namespace fleece::impl;
 
 
     static const slice kMaxRevTreeDepthKey = "maxRevTreeDepth"_sl;
@@ -153,7 +158,7 @@ namespace c4Internal {
                                         inConfig.storageEngine),
                      inConfig, true))
     ,config(inConfig)
-    ,_encoder(new fleece::Encoder())
+    ,_encoder(new fleece::impl::Encoder())
     {
         if (config.flags & kC4DB_SharedKeys)
             _encoder->setSharedKeys(documentKeys());
@@ -259,26 +264,26 @@ namespace c4Internal {
                 if(!doc->loadSelectedRevBody()) {
                     continue;
                 }
-                
-                const Dict* body = Value::fromTrustedData(doc->selectedRev.body)->asDict();
-                auto sk = _db->documentKeys();
+
+                Retained<Doc> fleeceDoc = doc->fleeceDoc();
+                const Dict* body = fleeceDoc->asDict();
 
                 // Iterate over blobs:
-                Document::findBlobReferences(body, sk, [&](const Dict *blob) {
+                Document::findBlobReferences(body, [&](const Dict *blob) {
                     blobKey key;
-                    if (Document::dictIsBlob(blob, key, sk))    // get the key
+                    if (Document::dictIsBlob(blob, key))    // get the key
                         usedDigests.insert(key.filename());
                     return true;
                 });
 
                 // Now look for old-style _attachments:
-                auto attachments = body->get(slice(kC4LegacyAttachmentsProperty), sk);
+                auto attachments = body->get(slice(kC4LegacyAttachmentsProperty));
                 if (attachments) {
                     blobKey key;
                     for (Dict::iterator i(attachments->asDict()); i; ++i) {
                         auto att = i.value()->asDict();
                         if (att) {
-                            const Value* digest = att->get("digest"_sl, sk);
+                            const Value* digest = att->get("digest"_sl);
                             if (digest && key.readFromBase64(digest->asString())) {
                                 usedDigests.insert(key.filename());
                             }
@@ -444,6 +449,9 @@ namespace c4Internal {
     void Database::resetUUIDs() {
         beginTransaction();
         try {
+            UUID previousPrivate = getUUID(kPrivateUUIDKey);
+            auto &store = getKeyStore(toString(kC4InfoStore));
+            store.set(constants::kPreviousPrivateUUIDKey, {&previousPrivate, sizeof(UUID)}, transaction());
             generateUUID(kPublicUUIDKey, transaction(), true);
             generateUUID(kPrivateUUIDKey, transaction(), true);
         } catch (...) {
@@ -559,7 +567,7 @@ namespace c4Internal {
     }
 
 
-    fleece::Encoder& Database::sharedEncoder() {
+    fleece::impl::Encoder& Database::sharedEncoder() {
         _encoder->reset();
         return *_encoder.get();
     }
@@ -568,20 +576,20 @@ namespace c4Internal {
 #if DEBUG
     // Validate that all dictionary keys in this value behave correctly, i.e. the keys found
     // through iteration also work for element lookup. (This tests the fix for issue #156.)
-    static void validateKeys(const Value *val, SharedKeys *sk) {
+    static void validateKeys(const Value *val) {
         switch (val->type()) {
             case kArray:
                 for (Array::iterator j(val->asArray()); j; ++j)
-                    validateKeys(j.value(), sk);
+                    validateKeys(j.value());
                 break;
             case kDict: {
                 const Dict *d = val->asDict();
-                for (Dict::iterator i(d, sk); i; ++i) {
+                for (Dict::iterator i(d); i; ++i) {
                     auto key = i.keyString();
-                    if (!key.buf || d->get(key, sk) != i.value())
+                    if (!key.buf || d->get(key) != i.value())
                         error::_throw(error::CorruptRevisionData,
                                       "Document key is not properly encoded");
-                    validateKeys(i.value(), sk);
+                    validateKeys(i.value());
                 }
                 break;
             }
@@ -593,13 +601,14 @@ namespace c4Internal {
 
     void Database::validateRevisionBody(slice body) {
         if (body.size > 0 && body[0] != '{') {        // There are a few unit tests that store JSON
-            const Value *v = Value::fromData(body);
+            Retained<Doc> doc = new Doc(body, Doc::kUntrusted, documentKeys());
+            const Value *v = doc->root();
             if (!v)
                 error::_throw(error::CorruptRevisionData, "Revision body is not parseable as Fleece");
             const Dict *root = v->asDict();
             if (!root)
                 error::_throw(error::CorruptRevisionData, "Revision body is not a Dict");
-            validateKeys(v, documentKeys());
+            validateKeys(v);
             for (Dict::iterator i(root, documentKeys()); i; ++i) {
                 slice key = i.keyString();
                 if (key == "_id"_sl || key == "_rev"_sl || key == "_deleted"_sl)

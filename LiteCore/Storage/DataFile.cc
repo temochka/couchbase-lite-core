@@ -193,7 +193,7 @@ namespace litecore {
                     break;
 
                 if (n++ == 0)
-                    LogTo(DBLog, "Waiting for %zu other connection(s) to close before deleting %s",
+                    LogTo(DBLog, "Waiting for %ld other connection(s) to close before deleting %s",
                           otherConnections, shared->path.c_str());
                 if (st.elapsed() > kOtherDBCloseTimeoutSecs)
                     error::_throw(error::Busy, "Can't delete db file while other connections are open");
@@ -269,12 +269,12 @@ namespace litecore {
     }
 
 
-    SharedKeys* DataFile::documentKeys() const {
+    fleece::impl::SharedKeys* DataFile::documentKeys() const {
         auto keys = _documentKeys.get();
         if (!keys && _options.useDocumentKeys) {
             auto mutableThis = const_cast<DataFile*>(this);
             keys = new DocumentKeys(*mutableThis);
-            mutableThis->_documentKeys.reset(keys);
+            mutableThis->_documentKeys = keys;
         }
         return keys;
     }
@@ -291,7 +291,7 @@ namespace litecore {
     }
 
     void DataFile::transactionBegan(Transaction*) {
-        if (_documentKeys)
+        if (documentKeys())
             _documentKeys->transactionBegan();
     }
 
